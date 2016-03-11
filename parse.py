@@ -9,7 +9,7 @@ import numpy as np
 # just prints the line as a list of words for now because i'm not sure what to 
 # do with it. have to deal with punctuation, capitalization, etc. 
 def parse(): 
-	inp = open('./project2data/shakespeare.txt')
+	inp = open('shakespeare.txt')
 
 	# stores list of words in the line in "words"
 	for line in inp: 
@@ -18,6 +18,5 @@ def parse():
 
 if __name__ == '__main__':
 	parse()
-
 
 # between poems, the lines are [], [], [number]
