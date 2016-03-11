@@ -46,7 +46,8 @@ def forward(S, A, O, obs):
 
 	return F 
 
-# currently unnormalized. do we use the coefficients from the forward step? 
+# currently unnormalized. we should probably use the same coefficients as in the forward algorithm
+# so we can calculate gamma via: https://en.wikipedia.org/wiki/Forward%E2%80%93backward_algorithm 
 def backward(A, O, obs): 
 
 	""" Calculates the backward probability matrix B. This is a matrix where each (i, j) entry 
