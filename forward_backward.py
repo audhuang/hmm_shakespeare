@@ -83,24 +83,16 @@ def backward(A, O, C, obs):
 
 	assert len(C) == M                         # number of coeff should equal length of sequence 
 
-
-	# TODO: working on indexing below 
-
 	# initialize the last column of B and then normalize with the last coefficient of C 
 	B[:,M - 1] = np.dot(np.multiply(A, O[:,obs[-1]]), B_MM)    
 	B[:,M - 1] = np.divide(B[:,M - 1], C[-1]) 
 	
-	for j in range(2,M):
-
-
-	# populate B backwards. generate each previous column of B via the one in front.  
-	for j in reversed(range(M - 1)): 
-		# j starts at M - 2 and goes to 0 because B[:,M - 1] is the last column
-		B[:, M - 2] = np.dot(np.multiply(A, O[:, obs[M - 2]]), B[:, M - 1])
-
-		B[:,j] = np.multiply(np.multiply(A, O[:, obs[]]), B[:,j + 1])    # compute column
-		B[:,j] = np.dot(np.multiply(A, O[:, ]), B[:, ]) 
-		B[:,j] = np.divide(B[:,j], C[j])                                     # normalize 
+	# goes from j = 2 to M, so M - j ranges from M - 2 to 0 (aka we work backwards starting with
+	# the second to last column M - 2 to the first column 0)
+	for j in range(2, M + 1):
+		# compute the M - jth row via M - j + 1 and then normalize using C[M - j]
+		B[:,M - j] = np.dot(np.multiply(A, O[:,obs[M - j]]), B[:, M - j + 1])
+		B[:,M - j] = np.divide(B[:,M - j], C[M - j]) 
 
 	return B
 
