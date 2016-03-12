@@ -34,21 +34,29 @@ def forward(S, A, O, obs):
 	L = np.shape(A)[0]                         # L is the number of hidden states 
 	M = len(obs)                               # M is the number of observations in our sample 'obs'  
 
+	C = []                                     # the list of coefficients used to normalize each column to 1 
 	F = np.zeros(L, M)                         # the foward algorithm generates an L x M matrix
 	F[:,0] = np.multiply(S, O[:,obs[0]])       # initialize the first column of F via S * (obs[0] column of B)
-	F[:,0] = np.divide(F[:,0], np.sum(F[:,0])) # normalize the first column so the entries sum to 1 
+	c_0 = np.sum(F[:,0])                       # compute the first normalizing coefficient
+	C.append(c_0)                              # record c_0 
+	F[:,0] = np.divide(F[:,0], c_0)            # normalize the first column so the entries sum to 1 
 
 	# begin the forward algorithm. generate each subsequent column of F via the previous one, 
 	# normalizing at each step
 	for j in range(1, M):
-		F[:,j] = np.multiply(F[:,j - 1], np.multiply(A, O[:,obs[j]]))    # compute the new column j 
-		F[:,j] = np.divide(F[:,j], np.sum(F[:,j]))                       # normalize column j 
+		F[:,j] = np.dot(np.multiply(A, O[:,obs[j]]), F[:,j - 1])         # compute the new column j 
+		c_j = np.sum(F[:,j])                                             # compute the jth coeff.
+		C.append(c_j)                                                    # record the jth coeff.  
+		F[:,j] = np.divide(F[:,j], c_j)                                  # normalize column j 
 
-	return F 
+	# return the foward matrix F and the list of normalizing coefficients C (these will be used
+	# to normalize the backward probabilities in the backward step)
+	return (F, C) 
 
-# currently unnormalized. we should probably use the same coefficients as in the forward algorithm
-# so we can calculate gamma via: https://en.wikipedia.org/wiki/Forward%E2%80%93backward_algorithm 
-def backward(A, O, obs): 
+
+
+
+def backward(A, O, C, obs): 
 
 	""" Calculates the backward probability matrix B. This is a matrix where each (i, j) entry 
 	    represents P(o_(j + 1), o_(j + 1), ... o_M | X_t = i). Each (i, j) entry is the probability 
@@ -57,20 +65,57 @@ def backward(A, O, obs):
 	    dimension L x M where L is the number of hidden states and M is the length of our sample 
 	    'obs'. 
 
-	    params:   
+	    params:    A    the transition matrix 
+
+	               O    the observation matrix 
+
+	               C   the list of forward coefficients 
+
+	               obs  the list of observations 
 	""" 
 
 	assert np.shape(A)[0] == np.shape(A)[1]    # transition matrix should be square 
 	L = np.shape(A)[0]                         # L is the number of hidden states 
 	M = len(obs)                               # M is the number of observations in our sample 'obs'
 
-	B = np.zeros(L, M)                         # the backward algorithm generates an L x M matrix 
-	B[:,M - 1] = np.ones(L)                    # initialize the last column of B. last column is not normalized. 
+	B = np.zeros(L, M)                         # the backward algorithm generates an L x M matrix
+	B_MM = np.ones(L)                          # the backward algorithm is initialized with all ones 
 
-	# begin the backward algorithm. generate each previous column of B via the next one.
-	# j starts at M - 2 and goes to 0 because B[:,M - 1] is the last column.  
+	assert len(C) == M                         # number of coeff should equal length of sequence 
+
+
+	# TODO: working on indexing below 
+
+	# initialize the last column of B and then normalize with the last coefficient of C 
+	B[:,M - 1] = np.dot(np.multiply(A, O[:,obs[-1]]), B_MM)    
+	B[:,M - 1] = np.divide(B[:,M - 1], C[-1]) 
+	
+	for j in range(2,M):
+
+
+	# populate B backwards. generate each previous column of B via the one in front.  
 	for j in reversed(range(M - 1)): 
-		B[:,j] = np.multiply(np.multiply(A, O[:, obs[j + 1]]), B[:,j + 1])
-		# not currently normalized  
+		# j starts at M - 2 and goes to 0 because B[:,M - 1] is the last column
+		B[:, M - 2] = np.dot(np.multiply(A, O[:, obs[M - 2]]), B[:, M - 1])
+
+		B[:,j] = np.multiply(np.multiply(A, O[:, obs[]]), B[:,j + 1])    # compute column
+		B[:,j] = np.dot(np.multiply(A, O[:, ]), B[:, ]) 
+		B[:,j] = np.divide(B[:,j], C[j])                                     # normalize 
 
 	return B
+
+
+
+
+def gamma(F, B): 
+	""" Computes the gamma matrix B. This is a matrix where each (i, j) entry represents gamma_j(i) 
+	    = P(X_j = i | o_1, ... o_M, S, A, O). This is the probability that at the jth part of our 
+	    training sequence we are in hidden state i. 
+
+	    params:    F    the forward matrix.
+
+	               B    the backward matrix.   
+	"""
+
+	return 
+
