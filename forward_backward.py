@@ -6,7 +6,7 @@ import numpy as np
 
 
 
-
+# transition matrix has rows as target state and columns as start state 
 def forward(S, A, O, obs):
 
 	""" Calculates the forward probability matrix F. This is a matrix where each (i, j) entry 
@@ -100,6 +100,7 @@ def backward(A, O, C, obs):
 
 
 def gamma(S, F, B): 
+
 	""" Computes the gamma matrix G. This is a matrix where each (i, j) entry represents gamma_j(i) 
 	    = P(X_j = i | o_1, ... o_M, S, A, O). This is the probability that at the jth part of our 
 	    training sequence we are in hidden state i. 
@@ -124,3 +125,47 @@ def gamma(S, F, B):
 
 	return G 
 
+
+	
+
+def baum_welch(L, M, X): 
+
+	""" Runs the Baum-Welch algorithm on a list of training sequences X. Returns trained transition 
+	    and observation matrices A and O. 
+
+	    params:    L    int  - the number of hidden states to use for the HMM 
+	               M    int  - the number of distinct observations possible in the training set 
+	    	       X    list - the list of sequences used for the training. each sequence is assumed 
+	    	                   to be a list of integers that correctly index into M
+	"""
+
+
+	# initialize start state S 
+	S = np.random.uniform(size=L)    # initialize a start state distribution S for the HMM 
+	S = np.divide(S, np.sum(S))      # normalize the vector to 1 
+
+
+	# initialize transition and observation matrices A and O
+
+	# the rows of A are the target states and the columns of A are the start states. 
+	# given a start state, one of the target states must be choosen so each column is normalized
+	A = np.random.rand(L, L) 
+	for i in range(L): 
+		A[:,i] = np.divide(A[:,i], np.sum(A[:,i]))    
+
+	# given some hidden state, there must be some observation, so every row of this matrix should
+	# be normalized
+	O = np.random.rand(L, M) 
+	for i in range(L):
+		O[i,:] = np.divide(O[i,:], np.sum(O[i,:])) 
+
+
+	# now train A and O using the training data 
+
+	# do:  
+	# E step via forward and backward  
+	# M step via gamma 
+	# until convergence
+
+	# return the trained transition and observation matrices (A, O)  
+	return 
