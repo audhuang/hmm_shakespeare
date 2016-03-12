@@ -99,15 +99,28 @@ def backward(A, O, C, obs):
 
 
 
-def gamma(F, B): 
-	""" Computes the gamma matrix B. This is a matrix where each (i, j) entry represents gamma_j(i) 
+def gamma(S, F, B): 
+	""" Computes the gamma matrix G. This is a matrix where each (i, j) entry represents gamma_j(i) 
 	    = P(X_j = i | o_1, ... o_M, S, A, O). This is the probability that at the jth part of our 
 	    training sequence we are in hidden state i. 
 
-	    params:    F    the forward matrix.
+	    params:    S    the starting state distribution 
+
+	    		   F    the forward matrix.
 
 	               B    the backward matrix.   
 	"""
 
-	return 
+	assert np.shape(F) == np.shape(B)    	# F & B should have shape L x M 
+	L = np.shape(F)[0]                      # the number of hidden states is L 
+
+	B_MM = np.ones(L)                       # recreate B_MM from backward algorithm 
+
+	F = np.hstack((S[:,np.newaxis], F))     # add to F the vector S as its first column 
+	B = np.hstack((B, B_MM[:,np.newaxis]))  # add to B the vector B_MM as its last column
+
+	assert np.shape(F) == np.shape(B)       # F and B should still be the same size 
+	G = np.multiply(F, B)                   # multiply F and B entrywise to get G
+
+	return G 
 
