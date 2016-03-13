@@ -53,8 +53,8 @@ states_to_words_dict = pickle.load( open( "index_to_word.p", "rb" ) )
 def convert_to_words(n):
     words = []
     for num in n:
-        #words.append(states_to_words_dict[num])
-        words.append("niggerdly")
+        words.append(states_to_words_dict[num])
+        #words.append("niggerdly")
     
     return words
 
