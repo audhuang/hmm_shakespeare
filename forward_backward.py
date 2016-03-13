@@ -3,7 +3,10 @@ from __future__ import division
 from scipy.integrate import quad
 from scipy.linalg import norm
 import random 
+import pickle 
+import sys 
 import numpy as np 
+
 
 
 
@@ -35,7 +38,7 @@ def forward(S, A, O, obs):
 	M = len(obs)                               # M is the number of observations in our sample 'obs'  
 
 	C = []                                     # the list of coefficients used to normalize each column to 1 
-	F = np.zeros(L, M)                         # the foward algorithm generates an L x M matrix
+	F = np.zeros((L, M))                         # the foward algorithm generates an L x M matrix
 	F[:,0] = np.multiply(S, O[:,obs[0]])       # initialize the first column of F via S * (obs[0] column of B)
 	c_0 = np.sum(F[:,0])                       # compute the first normalizing coefficient
 	C.append(c_0)                              # record c_0 
@@ -77,7 +80,7 @@ def backward(A, O, C, obs):
 	L = np.shape(A)[0]                         # L is the number of hidden states 
 	M = len(obs)                               # M is the number of observations in our sample 'obs'
 
-	B = np.zeros(L, M)                         # the backward algorithm generates an L x M matrix
+	B = np.zeros((L, M))                         # the backward algorithm generates an L x M matrix
 	B_MM = np.ones(L)                          # the backward algorithm is initialized with all ones 
 
 	assert len(C) == M                         # number of coeff should equal length of sequence 
@@ -112,6 +115,7 @@ def gamma(S, F, B):
 
 	assert np.shape(F) == np.shape(B)    	# F & B should have shape L x M 
 	L = np.shape(F)[0]                      # the number of hidden states is L 
+	M = np.shape(F)[1] 
 
 	B_MM = np.ones(L)                       # recreate B_MM from backward algorithm 
 
@@ -215,15 +219,18 @@ def baum_welch(L, M, obs):
 		O[i,:] = np.divide(O[i,:], np.sum(O[i,:])) 
 	
 	# for the moment, just do one step through the data 
-
+	
 	# TRAIN TRANSITION MATRIX 
 	# for every (a,b) entry of A 
+	print("TRAINING TRANSITION MATRIX...") 
 	for a in range(L):
 		for b in range(L): 
 
+			print("Calculating A(a,b) for (a,b) = ", "(", a, ",", b, ")")
+
 			# for every sample in the list of observations 
 			for o in obs: 
-
+				
 				# perform forward and backward on the sample 
 				(F, C) = forward(S, A, O, o)
 				B = backward(A, O, C, o)
@@ -238,15 +245,19 @@ def baum_welch(L, M, obs):
 				denominator = 0.0
 				assert (len(o) == np.shape(E)[0]) and (len(o) == np.shape(G)[1])
 				for i in range(len(o)):
-					numerator += E[i][a][b] 
+					numerator += E[i][a][b]
 					denominator += G[a][i]
 
 			A[a][b] = numerator / denominator 
 
 	# TRAIN OBSERVATION MATRIX
 	# for every (w, z) entry of O
+	print("TRAINING OBSERVATION MATRIX...")
+	sample_number = 0 
 	for w in range(L):
 		for z in range(M):
+
+			print("Calculating Z(w,z) for (w,z) = ", "(", w, ",", z, ")")
 
 			# for every sample in the list of observations 
 			for o in obs:
@@ -265,10 +276,46 @@ def baum_welch(L, M, obs):
 					numerator += indicator(o[i], z) * G[w][i]
 					denominator += G[w][i]
 
+					# if (indicator(o[i],z) == 1):
+					# 	print("INDICATOR") 
+
 			O[w][z] = numerator / denominator 
 
 	# return the trained transition and observation matrices (A, O)  
 	return (A,O) 
 
+def check_obs(idx, obs):
+	""" Checks every term in every sequence of obs and sees if any term is >= idx or < 0. If true, 
+	    returns false. Otherwise returns true.  
+	"""
+	for o in obs: 
+		for term in o: 
+			if (term >= idx) or (term < 0):  
+				return False 
+	return True 
+
+# MAX_INDEX = 3232 
 if __name__ == '__main__':
-	pass 
+
+	# unpickle the list of observations 
+	obs = pickle.load(open('sonnet_to_index.p', 'rb'))
+	# for the moment only train on the first 100 samples 
+	obs = obs[:2]
+
+	print("Number of samples in dataset is: ", len(obs))
+
+	MAX_OBS = 3232      # the total number of distinct observations in our dataset 
+	MAX_STATES = 10    # start out with 100 hidden states and see where that takes us 
+
+	# sanity check that no index in the dataset is >= MAX_OBS or < 0.
+	assert check_obs(MAX_OBS, obs) == True     
+	
+	# attempt to perform training on the list of observations obs 
+	(A, O) = baum_welch(MAX_STATES, MAX_OBS, obs) 
+	
+	# A = np.array([1,2,3])
+	# O = np.array([3,4,5])
+	print("FINAL TRANSITION MATRIX IS: \n", A)
+	print("FINAL OBSERVATION MATRIX IS: \n", O)
+
+	print("norm of O:", norm(O))    # O is mostly sparse if trained on few samples -- initialzied with zeros  
