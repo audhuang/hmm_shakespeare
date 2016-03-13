@@ -21,7 +21,7 @@ d = cmudict.dict() # dicionary of syllables from cmudict
 def parse(word_dic, index_dic): 
 
 	# open 'shakespeare.txt'
-	inp = open('./project2data/shakespeare.txt', 'r')
+	inp = open('shakespeare.txt', 'r')
 
 	# use regex to parse unique words into list 'unique'
 	text = inp.read().lower() # make everything lowercase
@@ -49,7 +49,7 @@ def parse(word_dic, index_dic):
 
 
 def check(word_list): 
-	out = open('./project2data/check.txt', 'w')
+	out = open('check.txt', 'w')
 
 	for i in word_list: 
 		for j in i: 
@@ -57,7 +57,7 @@ def check(word_list):
 		out.write('\n')
 
 def check_pos(pos_list): 
-	out = open('./project2data/check_pos.txt', 'w')
+	out = open('check_pos.txt', 'w')
 
 	for i in pos_list: 
 		for j in i: 
@@ -66,7 +66,7 @@ def check_pos(pos_list):
 		 
 
 def get_list(index_dic): 
-	inp = open('./project2data/shakespeare.txt', 'r')
+	inp = open('shakespeare.txt', 'r')
 
 	word_list = []
 	line_list = []
@@ -83,7 +83,7 @@ def get_list(index_dic):
 
 
 
-	inp = open('./project2data/shakespeare.txt', 'r')
+	inp = open('shakespeare.txt', 'r')
 
 	text = inp.read().lower() # make everything lowercase
 	text = re.sub('[^a-z\ \'\-]+', ' ', text) # replace punctuation with spaces
@@ -110,7 +110,7 @@ def pos(line_list):
 	tag_dic = {}
 	pos_dic = {}
 	tag_list = []
-	inp = open('./project2data/shakespeare.txt', 'r')
+	inp = open('shakespeare.txt', 'r')
 
 	text = inp.read().lower() # make everything lowercase
 	text = re.sub('[^a-z\ \'\-]+', ' ', text) # replace punctuation with spaces
@@ -158,7 +158,7 @@ def pos_prob(tag_list):
 			print('')
 
 def rhyme(rhyme_dic): 
-	inp = open('./project2data/shakespeare.txt', 'r')
+	inp = open('shakespeare.txt', 'r')
 	count = 1
 	poem = []
 
@@ -335,9 +335,6 @@ def syllables(word_dic, syl_dic, bad_dic):
 
 	z = syl_dic.copy() 
 	z.update(bad_dic)
-	print(len(syl_dic))
-	print(len(bad_dic))
-	print(len(z))
 
 	cp.dump(z, open('syl_dic.p', 'wb'))
 
@@ -354,17 +351,15 @@ if __name__ == '__main__':
 
 	
 	word_dic, index_dic, unique, count_dic = parse(word_dic, index_dic) # parse file into word_dic, word : index
-	print(count_dic)
 	
 	word_list, line_list = get_list(index_dic)
 	check(word_list)
+	print(np.mean(line_list))
 	
 	tag_dic, tag_list, pos_dic = pos(line_list)
-	print(pos_dic)
 
 	rhyme_dic = rhyme(rhyme_dic)
 	# print("number of parts of speech: ", len(tag_dic))
 
 	part_dic, bad_dic, syl_dic = syllables(word_dic, syl_dic, bad_dic) # parse words into syl_dic and bad_dic, word : number of syllables
-	print(len(bad_dic))
 

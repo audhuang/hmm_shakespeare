@@ -47,8 +47,9 @@ if __name__ == '__main__':
 	count_dic = cp.load(open(count_dic_file, 'rb'))
 	
 	print(O.shape)
-	for i in range(O.shape): 
-		O[:,i] = O[:,i] / count_dic[i]
+	norm = np.empty(O.shape)
+	for i in range(O.shape[1]): 
+		norm[:,i] = O[:,i] / count_dic[index_dic[i]]
 
 
 
