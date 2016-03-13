@@ -12,51 +12,33 @@ import os
 import numpy as np 
 import pickle
 
-L = 10
-M = 10
-
-S = np.random.uniform(size=L)    # initialize a start state distribution S for the HMM 
-S = np.divide(S, np.sum(S))      # normalize the vector to 1 
 
 
-# the rows of A are the target states and the columns of A are the start states. 
-    # given a start state, one of the target states must be choosen so each column is normalized
-A = np.random.rand(L, L) 
-for i in range(L): 
-    A[:,i] = np.divide(A[:,i], np.sum(A[:,i]))    
+def convert_syllables_dict(s_dict):
 
-    # given some hidden state, there must be some observation, so every row of this matrix should
-    # be normalized
-O = np.random.rand(L, M) 
-for i in range(L):
-    O[i,:] = np.divide(O[i,:], np.sum(O[i,:])) 
+    # generate new dictionary that maps words to 
+    # number of syllables (int) 
+    new_dict = {} 
+    for k, v in s_dict.iteritems():
+        if type(v) is list: 
+            new_dict[k] = v[0] 
+        if type(v) is int: 
+            new_dict[k] = v 
 
-    
-    
-    
+    # check types 
+    for k, v in new_dict.iteritems():
+        assert type(new_dict[k]) is int 
+    return new_dict 
 
-
-average_length = 8.15977443609
-std = 1.1474220639
-
-rhyming_dict = {}
-syllables_dict = {}
-states_to_words_dict = {}
-
-
-A = np.load(os.getcwd() + '/pickles/transition.npy', 'r') 
-O = np.load(os.getcwd() + '/pickles/observation.npy', 'r') 
-S = np.load(os.getcwd() + '/pickles/start.npy', 'r') 
-
-# A = pickle.load( open( "transition.npy", "rb" ) )
-# O = pickle.load( open( "observation.npy", "rb" ) )
-
-#S = pickle.load( open( "save.p", "rb" ) )
-#rhyming_dict = pickle.load( open( "rhyme_dic.p", "rb" ) )
-syllables_dict = pickle.load( open( "./pickles/syl_dic.p", "rb" ) )
-states_to_words_dict = pickle.load( open( "./pickles/index_to_word.p", "rb" ) )
-words_to_state_dict = pickle.load( open( "./pickles/word_to_index.p", "rb" ) )
-
+# def check_syllables_dict(s_dict):
+#     for k, v in s_dict.iteritems():
+#         if type(v) is list:
+#             if len(v) != 1:
+#                 print(k)
+#                 print(v)
+#         else:
+#             assert type(v) is int 
+#     return True 
 
 def convert_to_words(n):
     words = []
@@ -69,7 +51,11 @@ def convert_to_words(n):
 def check_syllables(words):
     syllables = 0
     for word in words:
-        syllables += syllables_dict[words_to_state_dict[word]]
+        # print(type(syllables_dict[word]))
+        # print(word)
+        # print(syllables_dict['wherefore'])
+        # print(type(syllables_dict[word]))
+        syllables += syllables_dict[word]
     
     return syllables
 
@@ -181,9 +167,49 @@ def poem_gen(S, A, O, avg_words, std):
     return poem
     
     
-    
 if __name__ == '__main__':
+    L = 10
+    M = 10
+
+    S = np.random.uniform(size=L)    # initialize a start state distribution S for the HMM 
+    S = np.divide(S, np.sum(S))      # normalize the vector to 1 
+
+
+    # the rows of A are the target states and the columns of A are the start states. 
+        # given a start state, one of the target states must be choosen so each column is normalized
+    A = np.random.rand(L, L) 
+    for i in range(L): 
+        A[:,i] = np.divide(A[:,i], np.sum(A[:,i]))    
+
+        # given some hidden state, there must be some observation, so every row of this matrix should
+        # be normalized
+    O = np.random.rand(L, M) 
+    for i in range(L):
+        O[i,:] = np.divide(O[i,:], np.sum(O[i,:])) 
+
+    average_length = 8.15977443609
+    std = 1.1474220639
+
+    rhyming_dict = {}
+    syllables_dict = {}
+    states_to_words_dict = {}
+
+
+    A = np.load(os.getcwd() + '/pickles/transition.npy', 'r') 
+    O = np.load(os.getcwd() + '/pickles/observation.npy', 'r') 
+    S = np.load(os.getcwd() + '/pickles/start.npy', 'r') 
+
+    # A = pickle.load( open( "transition.npy", "rb" ) )
+    # O = pickle.load( open( "observation.npy", "rb" ) )
+
+    #S = pickle.load( open( "save.p", "rb" ) )
+    #rhyming_dict = pickle.load( open( "rhyme_dic.p", "rb" ) )
+    nonhomogenous_syllables_dict = pickle.load( open( "./pickles/syl_dic.p", "rb" ) )
+    syllables_dict = convert_syllables_dict(nonhomogenous_syllables_dict)
+    states_to_words_dict = pickle.load( open( "./pickles/index_to_word.p", "rb" ) )
+    words_to_state_dict = {v: k for k, v in states_to_words_dict.iteritems()}
     # print(states_to_words_dict)
+    # check_syllables_dict(syllables_dict)
     print(poem_gen(S, A, O, average_length, std))
 
 # In[ ]:
