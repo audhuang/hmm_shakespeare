@@ -1,10 +1,12 @@
 from __future__ import print_function
 from __future__ import division
+from tempfile import TemporaryFile
 from scipy.integrate import quad
 from scipy.linalg import norm
 import random 
 import pickle 
 import sys 
+import os 
 import numpy as np 
 
 
@@ -188,14 +190,16 @@ def indicator(a, b):
 	return 0 
 
 
-def baum_welch(L, M, obs): 
+def baum_welch(L, M, obs, epsilon): 
 	""" Runs the Baum-Welch algorithm on a list of training sequences X. Returns trained transition 
 	    and observation matrices A and O. 
 
-	    params:    L    int  - the number of hidden states to use for the HMM 
-	               M    int  - the number of distinct observations possible in the training set 
-	    	       X    list - the list of sequences used for the training. each sequence is assumed 
-	    	                   to be a list of integers that correctly index into M
+	    params:    L          int  -  the number of hidden states to use for the HMM 
+	               M          int  -  the number of distinct observations possible in the training 
+	                                  set 
+	    	       obs        list -  the list of sequences used for the training. each sequence is 
+	    	                          assumed to be a list of integers that correctly index into M
+	    	       epsilon    float - the tolerance 
 	"""
 
 
@@ -221,78 +225,87 @@ def baum_welch(L, M, obs):
 	
 	# initialize matrices for vectorization 
 	A_numer = np.zeros(np.shape(A))
-	A_denom = np.ones(np.shape(A))[:,None] 
+	A_denom = np.ones(L)[:,None]
 	O_numer = np.zeros(np.shape(O))
-	O_denom = np.ones(np.shape(O))
+	O_denom = np.ones(L)[:,None] 
 
-	for o in obs: 
+	# construct a do-while loop in python  
+	while True:
 
-		############################################################################################
-		# E STEP
-		############################################################################################
+		A_prev = A
+		O_prev = O 
+		o_count = 0
 
-		# the length of the sample 
-		Mj = len(o) 
+		for o in obs: 
 
-		# perform forward and backward on the sample 
-		(F, C) = forward(S, A, O, o)
-		B = backward(A, O, C, o)
+			o_count += 1 
 
-		# from forward and backward, compute gamma and xi for this sample 
-		G = gamma(S, F, B)
-		E = xi(A, O, S, F, B)
+			########################################################################################
+			# E STEP
+			########################################################################################
 
-		# sanity check for dimensions of generated matrices 
-		assert np.shape(G) == (L, Mj) 
-		assert np.shape(E) == (Mj, L, L) 
+			# the length of the sample 
+			Mj = len(o) 
 
-		############################################################################################
-		# M STEP 
-		############################################################################################
+			# perform forward and backward on the sample 
+			(F, C) = forward(S, A, O, o)
+			B = backward(A, O, C, o)
 
-		# TRAIN TRANSITION MATRIX 
-		print("TRAINING TRANSITION MATRIX...")
+			# from forward and backward, compute gamma and xi for this sample 
+			G = gamma(S, F, B)
+			E = xi(A, O, S, F, B)
 
-		# populate the numerator -- this is a collapse of the 3D matrix to a 2D one with summations 
-		# entrywise between each 2D array, i.e., Mj x L x L ----> L x L = shape(A)
-		for m in range(Mj): 
-			A_numer += E[m]
+			# sanity check for dimensions of generated matrices 
+			assert np.shape(G) == (L, Mj) 
+			assert np.shape(E) == (Mj, L, L) 
 
-		# the denominator is the sum across Mj for row i in the L x Mj matrix G 
-		A_denom += np.sum(G, axis=1)[:, None]
-		assert np.shape(A_denom)[0] == L   
+			########################################################################################
+			# M STEP 
+			########################################################################################
 
-		# we can now update A by dividing each row of A_numer by each row of A_denom[:,None]
-		# A = np.divide(A_numer, A_denom[:,None]) 
-		# for i in range(L):
-		# 	A[:,i] = np.divide(A[:,i], np.sum(A[:,i]))
-		# print(np.sum(A[:,0]))
+			# TRAIN TRANSITION MATRIX 
 
-		# TRAIN OBSERVATION MATRIX 
-		# print("TRAINING OBSERVATION MATRIX...")
+			# populate the numerator -- this is a collapse of the 3D matrix to a 2D one with summations 
+			# entrywise between each 2D array, i.e., Mj x L x L ----> L x L = shape(A)
+			for m in range(Mj): 
+				A_numer += E[m]
 
-		# # initialize the numerator and denominator matrices to prepare for vectorization. 
-		# # before the indicator is applied, the numerator and denominator are the same. also 
-		# # initialize a G_indicator array on which we will zero out some entries 
-		# O_numer = np.zeros(np.shape(O))
-		# O_denom = np.ones(np.shape(O)) 
-		# G_indicator = G  
+			# the denominator is the sum across Mj for row i in the L x Mj matrix G 
+			A_denom += np.sum(G, axis=1)[:, None]
+			assert np.shape(A_denom)[0] == L   
 
-		# # we need to zero out those entries that don't satisfy the indicator condition 
-		# # for every column of O_numer 
-		# for m in range(Mj): 
-		# 	if o[m]  
+			# TRAIN OBSERVATION MATRIX 
+			for m in range(Mj):
+				# only the column concerting emission o[m] should be modified 
+				O_numer[:, o[m]] += np.sum(G, axis=1)
+			O_denom += np.sum(G, axis=1)[:, None]
 
-		# # the denominator is just the sum across every row of G  
-		# O_denom = np.sum(G, axis=1) 
+			# print("Finished sample: ", o_count) 
 
-		# # apply the indicator function to the numerator 
-		# for m in range(Mj):
-		# 	if o[m] != m:
-		# 		O_numer[m] = 0 
+		A = A_numer / A_denom 
+		O = O_numer / O_denom 
+
+		# renormalize 
+		for i in range(L):
+			A[:,i] = np.divide(A[:,i], np.sum(A[:,i]))
+			O[i,:] = np.divide(O[i,:], np.sum(O[i,:]))
+
+		# print out the difference between this iterations A, O matrices and the previous 
+		# iteration's matrices 
+		print("DELTA A: ", difference(A, A_prev))
+		print("DELTA O: ", difference(O, O_prev)) 
+
+		# convergence condition 
+		if (difference(A, A_prev) < epsilon) and (difference(O, O_prev) < epsilon):
+			break
+
+	#ENDWHILE 
 
 	# return the trained transition and observation matrices (A, O)  
 	return (A,O) 
+
+
+
 
 def check_obs(idx, obs):
 	""" Checks every term in every sequence of obs and sees if any term is >= idx or < 0. If true, 
@@ -304,95 +317,41 @@ def check_obs(idx, obs):
 				return False 
 	return True 
 
-# MAX_INDEX = 3232 
+
+
+
+####################################################################################################
+## MAIN 
+## MAX_INDEX = 3232 is the number of distince symbols in our training set.   
+####################################################################################################
 if __name__ == '__main__':
 
+	if len(sys.argv) != 3:
+		print("Usage:", sys.argv[0], "[NUMBER OF HIDDEN STATES] [TOLERANCE]")
+		sys.exit(1)  
+
+	NUM_STATES = int(sys.argv[1])      # the number of hidden states to be used for our model 
+	TOLERANCE  = float(sys.argv[2])    # our tolerance for convergence 
+	MAX_OBS = 3232                     # the total number of distinct observations in our dataset 
+
 	# unpickle the list of observations 
-	obs = pickle.load(open('sonnet_to_index.p', 'rb'))
-	# for the moment only train on the first 100 samples 
-	# obs = obs[:2]
-
+	obs = pickle.load(open('./pickles/sonnet_to_index.p', 'rb'))
 	print("Number of samples in dataset is: ", len(obs))
-
-	MAX_OBS = 3232      # the total number of distinct observations in our dataset 
-	MAX_STATES = 10    # start out with 100 hidden states and see where that takes us 
+	
+	# MAX_STATES = 10    # start out with 100 hidden states and see where that takes us 
 
 	# sanity check that no index in the dataset is >= MAX_OBS or < 0.
 	assert check_obs(MAX_OBS, obs) == True     
 	
 	# attempt to perform training on the list of observations obs 
-	(A, O) = baum_welch(MAX_STATES, MAX_OBS, obs) 
-	
-	# A = np.array([1,2,3])
-	# O = np.array([3,4,5])
+	(A, O) = baum_welch(NUM_STATES, MAX_OBS, obs, TOLERANCE) 
+
+	# pickle the results
+	transition_file = open(os.getcwd() + '/pickles/transition.npy', 'a+')
+	observation_file = open(os.getcwd() + '/pickles/observation.npy', 'a+')
+	np.save(transition_file, A)
+	np.save(observation_file, O) 
+
 	print("FINAL TRANSITION MATRIX IS: \n", A)
 	print("FINAL OBSERVATION MATRIX IS: \n", O)
-	print(np.sum(A[:,0]))
 
-	print("norm of O:", norm(O))    # O is mostly sparse if trained on few samples -- initialzied with zeros  
-
-
-# ####################################################################################################
-# ## older code 
-# ####################################################################################################
-	
-# 	# TRAIN TRANSITION MATRIX 
-# 	# for every (a,b) entry of A 
-# 	print("TRAINING TRANSITION MATRIX...") 
-# 	for a in range(L):
-# 		for b in range(L): 
-
-# 			print("Calculating A(a,b) for (a,b) = ", "(", a, ",", b, ")")
-
-# 			# for every sample in the list of observations 
-# 			for o in obs: 
-				
-# 				# perform forward and backward on the sample 
-# 				(F, C) = forward(S, A, O, o)
-# 				B = backward(A, O, C, o)
-
-# 				# from forward and backward, compute gamma and xi 
-# 				G = gamma(S, F, B)
-# 				E = xi(A, O, S, F, B)
-
-# 				# using gamma and xi, compute the (a, b) entry. sum xi(a,b) across the sequence 
-# 				# to get the numerator, and sum gamma(a) across the sequence to get the denominator 
-# 				numerator = 0.0
-# 				denominator = 0.0
-# 				assert (len(o) == np.shape(E)[0]) and (len(o) == np.shape(G)[1])
-# 				for i in range(len(o)):
-# 					numerator += E[i][a][b]
-# 					denominator += G[a][i]
-
-# 			A[a][b] = numerator / denominator 
-
-# 	# TRAIN OBSERVATION MATRIX
-# 	# for every (w, z) entry of O
-# 	print("TRAINING OBSERVATION MATRIX...")
-# 	sample_number = 0 
-# 	for w in range(L):
-# 		for z in range(M):
-
-# 			print("Calculating Z(w,z) for (w,z) = ", "(", w, ",", z, ")")
-
-# 			# for every sample in the list of observations 
-# 			for o in obs:
-
-# 				# perform forward and backward 
-# 				(F, C) = forward(S, A, O, o)
-# 				B = backward(A, O, C, o)
-
-# 				# from forward and backward, compute gamma. xi is not needed here 
-# 				G = gamma(S, F, B)
-
-# 				# using gamma, compute the (w, z) entry
-# 				numerator = 0.0
-# 				denominator = 0.0 
-# 				for i in range(len(o)):
-# 					numerator += indicator(o[i], z) * G[w][i]
-# 					denominator += G[w][i]
-
-# 					# if (indicator(o[i],z) == 1):
-# 					# 	print("INDICATOR") 
-
-# 			O[w][z] = numerator / denominator 
