@@ -161,7 +161,7 @@ def xi(A, O, S, F, B):
 		for i in range(L):
 			for j in range(L): 
 				t_matrix[i][j] = F[i][t] * A[i][j] * B[j][t + 1] * O[j][t + 1]
-		# normalize the column 
+		# normalize the column ... or the row? 
 		for j in range(L):
 			t_matrix[:,j] = np.divide(t_matrix[:,j], np.sum(t_matrix[:,j]))
 		E[t] = t_matrix 
@@ -171,7 +171,7 @@ def xi(A, O, S, F, B):
 
 
 
-def tolerance(A, B):
+def difference(A, B):
 	""" This function compututes the difference between matrices A and O (entrywise) and then 
 	    returns the Frobenius norm of their difference. This acts as a tolerance for our convergence
 	    condition.
@@ -179,7 +179,10 @@ def tolerance(A, B):
 	T = A - B
 	return norm(T)
 
-
+def indicator(a, b):
+	if (a == b):
+		return 1
+	return 0 
 
 
 def baum_welch(L, M, obs): 
@@ -211,10 +214,61 @@ def baum_welch(L, M, obs):
 	for i in range(L):
 		O[i,:] = np.divide(O[i,:], np.sum(O[i,:])) 
 	
-	# do:  
-	# E step via forward and backward  
-	# M step via gamma and xi 
-	# until convergence
+	# for the moment, just do one step through the data 
+
+	# TRAIN TRANSITION MATRIX 
+	# for every (a,b) entry of A 
+	for a in range(L):
+		for b in range(L): 
+
+			# for every sample in the list of observations 
+			for o in obs: 
+
+				# perform forward and backward on the sample 
+				(F, C) = forward(S, A, O, o)
+				B = backward(A, O, C, o)
+
+				# from forward and backward, compute gamma and xi 
+				G = gamma(S, F, B)
+				E = xi(A, O, S, F, B)
+
+				# using gamma and xi, compute the (a, b) entry. sum xi(a,b) across the sequence 
+				# to get the numerator, and sum gamma(a) across the sequence to get the denominator 
+				numerator = 0.0
+				denominator = 0.0
+				assert (len(o) == np.shape(E)[0]) and (len(o) == np.shape(G)[1])
+				for i in range(len(o)):
+					numerator += E[i][a][b] 
+					denominator += G[a][i]
+
+			A[a][b] = numerator / denominator 
+
+	# TRAIN OBSERVATION MATRIX
+	# for every (w, z) entry of O
+	for w in range(L):
+		for z in range(M):
+
+			# for every sample in the list of observations 
+			for o in obs:
+
+				# perform forward and backward 
+				(F, C) = forward(S, A, O, o)
+				B = backward(A, O, C, o)
+
+				# from forward and backward, compute gamma. xi is not needed here 
+				G = gamma(S, F, B)
+
+				# using gamma, compute the (w, z) entry
+				numerator = 0.0
+				denominator = 0.0 
+				for i in range(len(o)):
+					numerator += indicator(o[i], z) * G[w][i]
+					denominator += G[w][i]
+
+			O[w][z] = numerator / denominator 
 
 	# return the trained transition and observation matrices (A, O)  
-	return 
+	return (A,O) 
+
+if __name__ == '__main__':
+	pass 
