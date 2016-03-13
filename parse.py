@@ -50,7 +50,7 @@ def parse(word_dic, index_dic):
 
 
 def check(word_list): 
-	out = open('check.txt', 'w')
+	out = open('./pickles/check.txt', 'w')
 
 	for i in word_list: 
 		for j in i: 
@@ -101,7 +101,8 @@ def get_list(index_dic):
 			
 			ind += 1
 		
-		word_list.append(indices)
+		word_list.append(indices[::-1])
+	check(word_list)
 
 	cp.dump(word_list, open('./pickles/sonnet_to_index.p', 'wb'))
 
@@ -354,6 +355,7 @@ if __name__ == '__main__':
 	word_dic, index_dic, unique, count_dic = parse(word_dic, index_dic) # parse file into word_dic, word : index
 	
 	word_list, line_list = get_list(index_dic)
+	cp.dump(word_list, open('./pickles/word_list.p', 'wb'))
 	
 	tag_dic, tag_list, pos_dic = pos(line_list)
 
