@@ -302,7 +302,7 @@ def baum_welch(L, M, obs, epsilon):
 	#ENDWHILE 
 
 	# return the trained transition and observation matrices (A, O)  
-	return (A,O) 
+	return (S,A,O) 
 
 
 
@@ -364,7 +364,7 @@ if __name__ == '__main__':
 	assert check_obs(MAX_OBS, obs) == True     
 	
 	# perform training on the list of observations obs 
-	(A, O) = baum_welch(NUM_STATES, MAX_OBS, obs, TOLERANCE) 
+	(S, A, O) = baum_welch(NUM_STATES, MAX_OBS, obs, TOLERANCE) 
 
 	print("Before pickle... \n") 
 	print("FINAL TRANSITION MATRIX IS: \n", A)
@@ -374,25 +374,32 @@ if __name__ == '__main__':
 	try:
 		os.remove('pickles/transition.npy')
 		os.remove('pickles/observation.npy')
+		os.remove('pickles/start.npy')
 	except OSError or IOError:
 		pass
 	transition_file = open(os.getcwd() + '/pickles/transition.npy', 'w+')
 	observation_file = open(os.getcwd() + '/pickles/observation.npy', 'w+')
+	start_file = open(os.getcwd() + '/pickles/start.npy', 'w+')
 	np.save(transition_file, A)
 	np.save(observation_file, O)
+	np.save(start_file, S) 
 	transition_file.close() 
 	observation_file.close() 
+	start_file.close() 
 
 	# unpickling 
 	print("After pickle... \n") 
 	retrived_transition = np.load(os.getcwd() + '/pickles/transition.npy', 'r') 
 	retrived_observation = np.load(os.getcwd() + '/pickles/observation.npy', 'r') 
+	retrived_start = np.load(os.getcwd() + '/pickles/start.npy', 'r') 
 	print("UNPICKLED TRANS: \n", retrived_transition)
 	print("UNPICKLED OBS: \n", retrived_observation)
 
 	# assert that the arrays before and after saving are equal entrywise 
 	assert A.all() == retrived_transition.all()
 	assert O.all() == retrived_observation.all()
+	assert S.all() == retrived_start.all() 
+
 
 	
 

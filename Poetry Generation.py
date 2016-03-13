@@ -8,6 +8,7 @@ from __future__ import division
 from scipy.integrate import quad
 from scipy.linalg import norm
 import random 
+import os 
 import numpy as np 
 import pickle
 
@@ -42,8 +43,13 @@ syllables_dict = {}
 states_to_words_dict = {}
 
 
-A = pickle.load( open( "transition.npy", "rb" ) )
-O = pickle.load( open( "observation.npy", "rb" ) )
+A = np.load(os.getcwd() + '/pickles/transition.npy', 'r') 
+O = np.load(os.getcwd() + '/pickles/observation.npy', 'r') 
+S = np.load(os.getcwd() + '/pickles/start.npy', 'r') 
+
+# A = pickle.load( open( "transition.npy", "rb" ) )
+# O = pickle.load( open( "observation.npy", "rb" ) )
+
 #S = pickle.load( open( "save.p", "rb" ) )
 #rhyming_dict = pickle.load( open( "rhyme_dic.p", "rb" ) )
 #syllables_dict = pickle.load( open( "syl_dic.p", "rb" ) )
