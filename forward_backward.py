@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import division
 from scipy.integrate import quad
+from scipy.linalg import norm
 import random 
 import numpy as np 
 
@@ -8,7 +9,6 @@ import numpy as np
 
 # transition matrix has rows as target state and columns as start state 
 def forward(S, A, O, obs):
-
 	""" Calculates the forward probability matrix F. This is a matrix where each (i, j) entry 
 	    represents P(o_1, o_2, ... o_j, X_t = i| A, O). In other words, each (i, j) entry is the 
 	    probability that the observed sequence is o_1, ... o_j and that at position j we are in 
@@ -57,7 +57,6 @@ def forward(S, A, O, obs):
 
 
 def backward(A, O, C, obs): 
-
 	""" Calculates the backward probability matrix B. This is a matrix where each (i, j) entry 
 	    represents P(o_(j + 1), o_(j + 1), ... o_M | X_t = i). Each (i, j) entry is the probability 
 	    that the sequence ends in o_(j + 1), o_(j + 2), ... o_M where we are in hidden state i at 
@@ -100,7 +99,6 @@ def backward(A, O, C, obs):
 
 
 def gamma(S, F, B): 
-
 	""" Computes the gamma matrix G. This is a matrix where each (i, j) entry represents gamma_j(i) 
 	    = P(X_j = i | o_1, ... o_M, S, A, O). This is the probability that at the jth part of our 
 	    training sequence we are in hidden state i. 
@@ -123,13 +121,68 @@ def gamma(S, F, B):
 	assert np.shape(F) == np.shape(B)       # F and B should still be the same size 
 	G = np.multiply(F, B)                   # multiply F and B entrywise to get G
 
+	# renormalize 
+	for i in range(M):
+		G[:,i] = np.divide(G[:,i], np.sum(G[:,i]))
+
+	# now remove the first column gamma_0 such that gamma is L x M 
+	G = G[:,1:]
+	assert np.shape(G) == (L, M)
+
 	return G 
 
 
+
+
+def xi(A, O, S, F, B):
+	""" Computes the xi matrix E. This is a 3-dimensional matrix M x L x L 
+
+		params:
+	""" 
+	
+	assert np.shape(F) == np.shape(B)    	# F & B should have shape L x M 
+	L = np.shape(F)[0]                      # the number of hidden states is L 
+	M = np.shape(F)[1]                      # the length of the sequence is M 
+
+	B_MM = np.ones(L)                       # recreate B_MM from backward algorithm 
+
+	F = np.hstack((S[:,np.newaxis], F))     # add to F the vector S as its first column 
+	B = np.hstack((B, B_MM[:,np.newaxis]))  # add to B the vector B_MM as its last column
+
+	# now column F_1 correpsonds to B_1, etc.
+
+	# initialize the 3D array 
+	E = np.ones((M, L, L))
+
+	# for every step in the M-length sequence, generate an L x L matrix as the t'th entry of our
+	# M x L x L matrix 
+	for t in range(M):
+		t_matrix = np.ones((L, L))
+		for i in range(L):
+			for j in range(L): 
+				t_matrix[i][j] = F[i][t] * A[i][j] * B[j][t + 1] * O[j][t + 1]
+		# normalize the column 
+		for j in range(L):
+			t_matrix[:,j] = np.divide(t_matrix[:,j], np.sum(t_matrix[:,j]))
+		E[t] = t_matrix 
+
+	return E 
 	
 
-def baum_welch(L, M, X): 
 
+
+def tolerance(A, B):
+	""" This function compututes the difference between matrices A and O (entrywise) and then 
+	    returns the Frobenius norm of their difference. This acts as a tolerance for our convergence
+	    condition.
+	"""
+	T = A - B
+	return norm(T)
+
+
+
+
+def baum_welch(L, M, obs): 
 	""" Runs the Baum-Welch algorithm on a list of training sequences X. Returns trained transition 
 	    and observation matrices A and O. 
 
@@ -144,7 +197,6 @@ def baum_welch(L, M, X):
 	S = np.random.uniform(size=L)    # initialize a start state distribution S for the HMM 
 	S = np.divide(S, np.sum(S))      # normalize the vector to 1 
 
-
 	# initialize transition and observation matrices A and O
 
 	# the rows of A are the target states and the columns of A are the start states. 
@@ -158,13 +210,10 @@ def baum_welch(L, M, X):
 	O = np.random.rand(L, M) 
 	for i in range(L):
 		O[i,:] = np.divide(O[i,:], np.sum(O[i,:])) 
-
-
-	# now train A and O using the training data 
-
+	
 	# do:  
 	# E step via forward and backward  
-	# M step via gamma 
+	# M step via gamma and xi 
 	# until convergence
 
 	# return the trained transition and observation matrices (A, O)  
