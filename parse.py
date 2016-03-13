@@ -104,6 +104,7 @@ def get_list(index_dic):
 		word_list.append(indices[::-1])
 	check(word_list)
 
+	cp.dump(word_list, open('./pickles/word_list.p', 'wb'))
 	cp.dump(word_list, open('./pickles/sonnet_to_index.p', 'wb'))
 
 	return word_list, line_list
@@ -342,6 +343,31 @@ def syllables(word_dic, syl_dic, bad_dic):
 
 	return syl_dic, bad_dic, z
 
+def split_sonnet(word_list): 
+	count = 1
+	quatrains = []
+	volta = []
+	couplet = []
+
+	for row in word_list: 
+		if count <= 8: 
+			quatrains.append(row)
+		elif count <= 12: 
+			volta.append(row)
+		else: 
+			couplet.append(row)
+		count += 1
+
+		if count > 14: 
+			count = 1
+
+
+	cp.dump(quatrains, open('./pickles/quatrains.p', 'wb'))
+	cp.dump(volta, open('./pickles/volta.p', 'wb'))
+	cp.dump(couplet, open('./pickles/couplet.p', 'wb'))
+	return quatrains, volta, couplet
+
+
 
 if __name__ == '__main__':
 	word_dic = {} # dictionary of unique word : unique index 
@@ -355,12 +381,11 @@ if __name__ == '__main__':
 	word_dic, index_dic, unique, count_dic = parse(word_dic, index_dic) # parse file into word_dic, word : index
 	
 	word_list, line_list = get_list(index_dic)
-	cp.dump(word_list, open('./pickles/word_list.p', 'wb'))
+	quatrains, volta, couplet = split_sonnet(word_list)
 	
 	tag_dic, tag_list, pos_dic = pos(line_list)
 
 	rhyme_dic = rhyme(rhyme_dic)
-	# print("number of parts of speech: ", len(tag_dic))
 
 	part_dic, bad_dic, syl_dic = syllables(word_dic, syl_dic, bad_dic) # parse words into syl_dic and bad_dic, word : number of syllables
 
