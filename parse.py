@@ -138,11 +138,11 @@ def pos(line_list):
 	# generate dictionary of tag : words
 	for tag in tagged: 
 		if tag[1] in tag_dic: 
-			pos_dic[tag[1]].append(tag[0])
+			tag_dic[tag[1]].append(tag[0])
 		if tag[0] in pos_dic: 
 			pos_dic[tag[0]].append(tag[1])
 		if tag[1] not in tag_dic: 
-			pos_dic[tag[1]] = [tag[0]]
+			tag_dic[tag[1]] = [tag[0]]
 		if tag[0] not in pos_dic: 
 			pos_dic[tag[0]] = [tag[1]]
 
