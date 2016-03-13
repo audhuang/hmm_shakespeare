@@ -30,14 +30,14 @@ def pos_analysis(A, O, pos_dic, index_dic):
 
 
 if __name__ == '__main__':
-	transition_file = str(sys.argv[1])
-	observation_file = str(sys.argv[2])
+	transition_file = str('./pickles/' + sys.argv[1])
+	observation_file = str('./pickles/' + sys.argv[2])
 	# poem = str(sys.argv[3])
 	# index_dic = str(sys.argv[4])
 	# count_dic = str(sys.argv[5])
-	index_dic_file = str(sys.argv[3])
-	count_dic_file = str(sys.argv[4])
-	words_to_pos = cp.load(open(str(sys.argv[4]), 'rb'))
+	index_dic_file = str('./pickles/' + sys.argv[3])
+	count_dic_file = str('./pickles/' + sys.argv[4])
+	words_to_pos = cp.load(open(str('./pickles/' + sys.argv[5]), 'rb'))
 
 	# transition = cp.load(open(transition_file, 'rb'))
 	# observation = cp.load(open(emission_file, 'rb'))
