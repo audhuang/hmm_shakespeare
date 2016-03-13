@@ -6,17 +6,18 @@ import numpy as np
 import codecs
 import string
 import re
+import cPickle as cp
+from nltk import pos_tag
+from nltk import word_tokenize
 
 from nltk.corpus import cmudict
 
 d = cmudict.dict() # dicionary of syllables from cmudict
-word_dic = {} # dictionary of unique word : unique index 
-syl_dic = {} # dictionary of unique word : number of syllables if they're in cmudict
-bad_dic = {} # dictionary of unique word : number of syllables if they're not in cmudict
+
 
 # parses the text file 'shakespeare.txt' and adds each unique word to a dictionary,
 # WORD_DIC, with a unique index 
-def parse(): 
+def parse(word_dic, index_dic): 
 
 	# open 'shakespeare.txt'
 	inp = open('./project2data/shakespeare.txt', 'r')
@@ -29,12 +30,100 @@ def parse():
 	words = list(text.split()) # split file into a list of words by spaces
 	unique = list(set(words)) # get unique list of words
 
-	print(unique)
+	print("number unique words: ", len(unique))
+
 	# for each unique word, add as key to dictionary with unique index as value
 	i = 0
 	for word in unique: 
 		word_dic[word] = i
 		i += 1
+
+	index_dic = {y:x for x,y in word_dic.iteritems()}
+	cp.dump(index_dic, open('index_to_word.p', 'wb'))
+
+	return word_dic, index_dic, unique
+
+
+def check(word_list): 
+	out = open('./project2data/check.txt', 'w')
+
+	for i in word_list: 
+		for j in i: 
+			out.write(index_dic[j] + ' ')
+		out.write('\n')
+		
+		 
+
+def get_list(index_dic): 
+	inp = open('./project2data/shakespeare.txt', 'r')
+
+	word_list = []
+	line_list = []
+
+	for line in inp: 
+		line = line.lower()
+		line = re.sub('[^a-z\ \'\-]+', ' ', line) # replace punctuation with spaces
+		words = list(line.split(' '))
+		words = filter(None, words)
+		# print(words, len(words))
+
+		if len(words) > 1: 
+			line_list.append(len(words))
+
+
+
+	inp = open('./project2data/shakespeare.txt', 'r')
+
+	text = inp.read().lower() # make everything lowercase
+	text = re.sub('[^a-z\ \'\-]+', ' ', text) # replace punctuation with spaces
+	text = re.sub("(?=.*\w)^(\w|')+", '', text)
+
+	words = list(text.split()) # split file into a list of words by spaces
+
+
+
+	ind = 0
+	for num in line_list: 
+		indices = []
+		for i in range(num): 
+			indices.append(word_dic[words[ind]])
+			ind += 1
+		
+		word_list.append(indices)
+
+	# print(word_list)
+	# check(word_list)
+
+	cp.dump(word_list, open('sonnet_to_index.p', 'wb'))
+
+	return word_list, line_list
+
+def pos(line_list): 
+	tag_dic = {}
+	inp = open('./project2data/shakespeare.txt', 'r')
+
+	# use regex to parse unique words into list 'unique'
+	text = inp.read().lower() # make everything lowercase
+	text = re.sub('[^a-z\ \'\-]+', ' ', text) # replace punctuation with spaces
+	text = re.sub("(?=.*\w)^(\w|')+", ' ', text)
+
+	# text = word_tokenize(text)
+	# tagged = pos_tag(text)
+
+	words = text.split()
+	tagged = pos_tag(words)
+
+	for tag in tagged: 
+		if tag[1] not in tag_dic: 
+			tag_dic[tag[1]] = [tag[0]]
+		else: 
+			tag_dic[tag[1]].append(tag[0])
+
+	cp.dump(tag_dic, open('pos_to_words.p', 'wb'))
+
+
+	
+
 
 
 # there are a bunch of apostrophed, dashed, weirdly spelled, or archaic words that
@@ -48,7 +137,7 @@ def parse():
 # two syllables, not one. all of these exceptions are listed below. 
 # 
 # stores word as key and number of syllables as value in "BAD_DICT"
-def bad_syllables(not_in_dic): 
+def bad_syllables(bad_dic, not_in_dic): 
 
 	# list of diphthongs, which all count as one syllable. i didn't include:
 	# 'ia' as in 'variation'
@@ -135,10 +224,11 @@ def bad_syllables(not_in_dic):
 		bad_dic[i] = num_syl
 
 		print(bad_dic)
+	return bad_dic
 
 
 # fills in SYL_DICT and BAD_DICT with word as key and number of syllables as value
-def syllables(): 
+def syllables(word_dic, syl_dic, bad_dic): 
 	not_in_dic = [] # list of words not in cmudict, so we have to manually do them
 	
 	# go through each unique word in our dictionary of indexed words, WORD_DIC
@@ -152,13 +242,26 @@ def syllables():
 
 	# remove a string that's just a comma and not a word
 	not_in_dic.remove("'")
+	print(not_in_dic)
 	
 	# call function to calculate number of syllables for each word not in cmudict
-	bad_syllables(not_in_dic)
-	
+	bad_dic = bad_syllables(bad_dic, not_in_dic)
 
-	
+	return syl_dic, bad_dic
+
 
 if __name__ == '__main__':
-	parse() # parse file into word_dic, word : index
-	syllables() # parse words into syl_dic and bad_dic, word : number of syllables
+	word_dic = {} # dictionary of unique word : unique index 
+	index_dic = {} # dictionary of unique index : unique word
+	syl_dic = {} # dictionary of unique word : number of syllables if they're in cmudict
+	bad_dic = {} # dictionary of unique word : number of syllables if they're not in cmudict
+	pos_dic = {}
+
+	
+	word_dic, index_dic, unique = parse(word_dic, index_dic) # parse file into word_dic, word : index
+
+	word_list, line_list = get_list(index_dic)
+	pos(line_list)
+
+	# syl_dic, bad_dic = syllables(word_dic, syl_dic, bad_dic) # parse words into syl_dic and bad_dic, word : number of syllables
+
