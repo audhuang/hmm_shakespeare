@@ -321,29 +321,49 @@ def check_obs(idx, obs):
 
 
 ####################################################################################################
-## MAIN 
-## MAX_INDEX = 3232 is the number of distince symbols in our training set.   
+## MAIN
+# 
+# main is run with 4 command line arguments:
+#     [OBS PICKLE FILE]    the name of the pickle file storing the list of observations 
+#     [NUM DISTINCT OBS]   the number of distinct observations possible for the list 
+#                          of observations, i.e. 3232 means valid indices are from 0 to 3231 
+#     [NUM HIDDEN STATES]  the number of hidden states to use for this HMM 
+#     [TOLERANCE]          the difference between the norms of A and O where we stop converging
+#  
+# example: python baum_welch.py ./pickles/sonnet_to_index.p 3232 10 0.01 
+#
+# 10 hidden states is a good testing number -- shouldn't take too long. the code can't handle much 
+# more than 100 states -- this will take about a half hour? each pass on the dataset will print out 
+# the tolerances so you can see if you're converging fast enough. 
+# 
+# the output of A is a L x L matrix where L is the number of hidden states used. the format of this
+# matrix is weird in that the rows represent the TARGET states and the columns represent the START 
+# states. so (i, j) represents the probability of transitioning from the jth state to the ith state. 
+# note: I don't think np.tranpose works with np.arrays? 
+#
+# the output of O is a L x M matrix where L is the number of hidden states and M is the number of 
+# distinct observations possible for the list of observations, i.e. 10 x 3232 
 ####################################################################################################
 if __name__ == '__main__':
 
-	if len(sys.argv) != 3:
-		print("Usage:", sys.argv[0], "[NUMBER OF HIDDEN STATES] [TOLERANCE]")
+	if len(sys.argv) != 5:
+		print("Usage:", sys.argv[0], "[OBS PICKLE FILE] [NUM DISTINCT OBS] [NUM HIDDEN STATES] [TOLERANCE]")
 		sys.exit(1)  
 
-	NUM_STATES = int(sys.argv[1])      # the number of hidden states to be used for our model 
-	TOLERANCE  = float(sys.argv[2])    # our tolerance for convergence 
-	MAX_OBS = 3232                     # the total number of distinct observations in our dataset 
+	# retrive command line arguments 
+	PICKLE_FILE = str(sys.argv[1])     # the name of the pickle file storing the list of observations  
+	MAX_OBS = int(sys.argv[2])         # the total number of distinct observations in our dataset 
+	NUM_STATES = int(sys.argv[3])      # the number of hidden states to be used for our model 
+	TOLERANCE  = float(sys.argv[4])    # our tolerance for convergence 
 
 	# unpickle the list of observations 
-	obs = pickle.load(open('./pickles/sonnet_to_index.p', 'rb'))
+	obs = pickle.load(open(PICKLE_FILE, 'rb'))
 	print("Number of samples in dataset is: ", len(obs))
 	
-	# MAX_STATES = 10    # start out with 100 hidden states and see where that takes us 
-
 	# sanity check that no index in the dataset is >= MAX_OBS or < 0.
 	assert check_obs(MAX_OBS, obs) == True     
 	
-	# attempt to perform training on the list of observations obs 
+	# perform training on the list of observations obs 
 	(A, O) = baum_welch(NUM_STATES, MAX_OBS, obs, TOLERANCE) 
 
 	# pickle the results
