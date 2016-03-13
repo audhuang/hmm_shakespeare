@@ -317,6 +317,17 @@ def check_obs(idx, obs):
 				return False 
 	return True 
 
+def find_mean_std(obs):
+	lengths = [len(o) for o in obs]
+	total_lines = len(lengths)
+	arr_lengths = np.array(lengths)
+	mean = np.mean(arr_lengths)
+	std_dev = np.std(arr_lengths)
+	return (mean, std_dev)
+
+	
+
+
 
 
 
@@ -359,6 +370,10 @@ if __name__ == '__main__':
 	# unpickle the list of observations 
 	obs = pickle.load(open(PICKLE_FILE, 'rb'))
 	print("Number of samples in dataset is: ", len(obs))
+
+	(mean, std) = find_mean_std(obs)
+	print(mean)
+	print(std) 
 	
 	# sanity check that no index in the dataset is >= MAX_OBS or < 0.
 	assert check_obs(MAX_OBS, obs) == True     

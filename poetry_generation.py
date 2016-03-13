@@ -36,8 +36,9 @@ for i in range(L):
     
 
 
-average_length = 4
-std = .001
+average_length = 8.15977443609
+std = 1.1474220639
+
 rhyming_dict = {}
 syllables_dict = {}
 states_to_words_dict = {}
@@ -52,8 +53,9 @@ S = np.load(os.getcwd() + '/pickles/start.npy', 'r')
 
 #S = pickle.load( open( "save.p", "rb" ) )
 #rhyming_dict = pickle.load( open( "rhyme_dic.p", "rb" ) )
-#syllables_dict = pickle.load( open( "syl_dic.p", "rb" ) )
-states_to_words_dict = pickle.load( open( "index_to_word.p", "rb" ) )
+syllables_dict = pickle.load( open( "./pickles/syl_dic.p", "rb" ) )
+states_to_words_dict = pickle.load( open( "./pickles/index_to_word.p", "rb" ) )
+words_to_state_dict = pickle.load( open( "./pickles/word_to_index.p", "rb" ) )
 
 
 def convert_to_words(n):
@@ -67,7 +69,7 @@ def convert_to_words(n):
 def check_syllables(words):
     syllables = 0
     for word in words:
-        syllables += syllabes_dict[word]
+        syllables += syllables_dict[words_to_state_dict[word]]
     
     return syllables
 
@@ -136,11 +138,11 @@ def gen_line(A, O, start, length):
         print (observed_states)
         current_line = convert_to_words(observed_states)
         
-        syllables_right = True
-        #syllables = check_syllables(current_line)
+        # syllables_right = True
+        syllables = check_syllables(current_line)
         
-        #if syllables == 10:
-            #syllables_right = True
+        if syllables == 10:
+            syllables_right = True
             
     return current_line
 
@@ -180,9 +182,9 @@ def poem_gen(S, A, O, avg_words, std):
     
     
     
-    
-poem_gen(S, A, O, average_length, std)
-
+if __name__ == '__main__':
+    # print(states_to_words_dict)
+    print(poem_gen(S, A, O, average_length, std))
 
 # In[ ]:
 
