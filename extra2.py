@@ -192,12 +192,10 @@ def baum_welch(L, M, obs):
 	""" Runs the Baum-Welch algorithm on a list of training sequences X. Returns trained transition 
 	    and observation matrices A and O. 
 
-	    params:    L          int  -  the number of hidden states to use for the HMM 
-	               M          int  -  the number of distinct observations possible in the training 
-	                                  set 
-	    	       obs        list -  the list of sequences used for the training. each sequence is 
-	    	                          assumed to be a list of integers that correctly index into M
-	    	       epsilon    float - the tolerance 
+	    params:    L    int  - the number of hidden states to use for the HMM 
+	               M    int  - the number of distinct observations possible in the training set 
+	    	       X    list - the list of sequences used for the training. each sequence is assumed 
+	    	                   to be a list of integers that correctly index into M
 	"""
 
 
@@ -223,79 +221,46 @@ def baum_welch(L, M, obs):
 	
 	# initialize matrices for vectorization 
 	A_numer = np.zeros(np.shape(A))
-	A_denom = np.ones(L)[:,None]
+	A_denom = np.ones(np.shape(A))[:,None] 
 	O_numer = np.zeros(np.shape(O))
-	O_denom = np.ones(L)[:,None] 
+	O_denom = np.ones(np.shape(O))
 
-	# first_iter = True 
+	for o in obs: 
 
-	iteration_count = 0 
-	while(iteration_count != 10):
+		############################################################################################
+		# E STEP
+		############################################################################################
 
-		A_prev = A
-		O_prev = O 
-		o_count = 0
+		# the length of the sample 
+		Mj = len(o) 
 
-		for o in obs: 
+		# perform forward and backward on the sample 
+		(F, C) = forward(S, A, O, o)
+		B = backward(A, O, C, o)
 
-			o_count += 1 
+		# from forward and backward, compute gamma and xi for this sample 
+		G = gamma(S, F, B)
+		E = xi(A, O, S, F, B)
 
-			############################################################################################
-			# E STEP
-			############################################################################################
+		# sanity check for dimensions of generated matrices 
+		assert np.shape(G) == (L, Mj) 
+		assert np.shape(E) == (Mj, L, L) 
 
-			# the length of the sample 
-			Mj = len(o) 
+		############################################################################################
+		# M STEP 
+		############################################################################################
 
-			# perform forward and backward on the sample 
-			(F, C) = forward(S, A, O, o)
-			B = backward(A, O, C, o)
+		# TRAIN TRANSITION MATRIX 
+		print("TRAINING TRANSITION MATRIX...")
 
-			# from forward and backward, compute gamma and xi for this sample 
-			G = gamma(S, F, B)
-			E = xi(A, O, S, F, B)
+		# populate the numerator -- this is a collapse of the 3D matrix to a 2D one with summations 
+		# entrywise between each 2D array, i.e., Mj x L x L ----> L x L = shape(A)
+		for m in range(Mj): 
+			A_numer += E[m]
 
-			# sanity check for dimensions of generated matrices 
-			assert np.shape(G) == (L, Mj) 
-			assert np.shape(E) == (Mj, L, L) 
-
-			############################################################################################
-			# M STEP 
-			############################################################################################
-
-			# TRAIN TRANSITION MATRIX 
-
-			# populate the numerator -- this is a collapse of the 3D matrix to a 2D one with summations 
-			# entrywise between each 2D array, i.e., Mj x L x L ----> L x L = shape(A)
-			for m in range(Mj): 
-				A_numer += E[m]
-
-			# the denominator is the sum across Mj for row i in the L x Mj matrix G 
-			A_denom += np.sum(G, axis=1)[:, None]
-			assert np.shape(A_denom)[0] == L   
-
-			# TRAIN OBSERVATION MATRIX 
-			for m in range(Mj):
-				# only the column concerting emission o[m] should be modified 
-				O_numer[:, o[m]] += np.sum(G, axis=1)
-			O_denom += np.sum(G, axis=1)[:, None]
-
-			# print("Finished sample: ", o_count) 
-
-		A = A_numer / A_denom 
-		O = O_numer / O_denom 
-
-		# renormalize 
-		for i in range(L):
-			A[:,i] = np.divide(A[:,i], np.sum(A[:,i]))
-			O[i,:] = np.divide(O[i,:], np.sum(O[i,:]))
-
-		iteration_count += 1 
-
-		print("A DIFF: ", difference(A, A_prev))
-		print("O DIFF: ", difference(O, O_prev)) 
-
-	#ENDWHILE 
+		# the denominator is the sum across Mj for row i in the L x Mj matrix G 
+		A_denom += np.sum(G, axis=1)[:, None]
+		assert np.shape(A_denom)[0] == L   
 
 		# we can now update A by dividing each row of A_numer by each row of A_denom[:,None]
 		# A = np.divide(A_numer, A_denom[:,None]) 
@@ -363,9 +328,7 @@ if __name__ == '__main__':
 	print("FINAL TRANSITION MATRIX IS: \n", A)
 	print("FINAL OBSERVATION MATRIX IS: \n", O)
 	print(np.sum(A[:,0]))
-	print(np.sum(O[0,:]))
 
-	print("norm of A:", norm(A))
 	print("norm of O:", norm(O))    # O is mostly sparse if trained on few samples -- initialzied with zeros  
 
 
