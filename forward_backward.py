@@ -188,7 +188,7 @@ def indicator(a, b):
 	return 0 
 
 
-def baum_welch(L, M, obs): 
+def baum_welch(L, M, obs, epsilon): 
 	""" Runs the Baum-Welch algorithm on a list of training sequences X. Returns trained transition 
 	    and observation matrices A and O. 
 
@@ -227,10 +227,8 @@ def baum_welch(L, M, obs):
 	O_numer = np.zeros(np.shape(O))
 	O_denom = np.ones(L)[:,None] 
 
-	# first_iter = True 
-
-	iteration_count = 0 
-	while(iteration_count != 10):
+	# construct a do-while loop in python  
+	while True:
 
 		A_prev = A
 		O_prev = O 
@@ -290,10 +288,12 @@ def baum_welch(L, M, obs):
 			A[:,i] = np.divide(A[:,i], np.sum(A[:,i]))
 			O[i,:] = np.divide(O[i,:], np.sum(O[i,:]))
 
-		iteration_count += 1 
-
 		print("A DIFF: ", difference(A, A_prev))
 		print("O DIFF: ", difference(O, O_prev)) 
+
+		# convergence condition 
+		if (difference(A, A_prev) < epsilon) and (difference(O, O_prev) < epsilon):
+			break
 
 	#ENDWHILE 
 
@@ -356,7 +356,7 @@ if __name__ == '__main__':
 	assert check_obs(MAX_OBS, obs) == True     
 	
 	# attempt to perform training on the list of observations obs 
-	(A, O) = baum_welch(MAX_STATES, MAX_OBS, obs) 
+	(A, O) = baum_welch(MAX_STATES, MAX_OBS, obs, 0.001) 
 	
 	# A = np.array([1,2,3])
 	# O = np.array([3,4,5])
