@@ -32,7 +32,7 @@ def parse(word_dic, index_dic):
 	unique = list(set(words)) # get unique list of words
 
 	counter = collections.Counter(words)
-	cp.dump(counter, open('count_dic.p', 'wb'))
+	cp.dump(counter, open('./pickles/count_dic.p', 'wb'))
 
 	print("number unique words: ", len(unique))
 
@@ -43,7 +43,8 @@ def parse(word_dic, index_dic):
 		i += 1
 
 	index_dic = {y:x for x,y in word_dic.iteritems()}
-	cp.dump(index_dic, open('index_to_word.p', 'wb'))
+	cp.dump(word_dic, open('./pickles/word_to_index.p', 'wb'))
+	cp.dump(index_dic, open('./pickles/index_to_word.p', 'wb'))
 
 	return word_dic, index_dic, unique, counter
 
@@ -102,7 +103,7 @@ def get_list(index_dic):
 		
 		word_list.append(indices)
 
-	cp.dump(word_list, open('sonnet_to_index.p', 'wb'))
+	cp.dump(word_list, open('./pickles/sonnet_to_index.p', 'wb'))
 
 	return word_list, line_list
 
@@ -147,8 +148,8 @@ def pos(line_list):
 
 
 	# save the tag dictionary 
-	cp.dump(tag_dic, open('pos_to_words.p', 'wb'))
-	cp.dump(pos_dic, open('words_to_pos.p', 'wb'))
+	cp.dump(tag_dic, open('./pickles/pos_to_words.p', 'wb'))
+	cp.dump(pos_dic, open('./pickles/words_to_pos.p', 'wb'))
 	return tag_dic, tag_list, pos_dic
 
 
@@ -208,7 +209,7 @@ def rhyme(rhyme_dic):
 			poem = []
 			count = 1
 
-	cp.dump(rhyme_dic, open('rhyme_dic.p', 'wb'))
+	cp.dump(rhyme_dic, open('./pickles/rhyme_dic.p', 'wb'))
 	return rhyme_dic
 
 
@@ -336,7 +337,7 @@ def syllables(word_dic, syl_dic, bad_dic):
 	z = syl_dic.copy() 
 	z.update(bad_dic)
 
-	cp.dump(z, open('syl_dic.p', 'wb'))
+	cp.dump(z, open('./pickles/syl_dic.p', 'wb'))
 
 	return syl_dic, bad_dic, z
 
@@ -353,8 +354,6 @@ if __name__ == '__main__':
 	word_dic, index_dic, unique, count_dic = parse(word_dic, index_dic) # parse file into word_dic, word : index
 	
 	word_list, line_list = get_list(index_dic)
-	check(word_list)
-	print(np.mean(line_list))
 	
 	tag_dic, tag_list, pos_dic = pos(line_list)
 

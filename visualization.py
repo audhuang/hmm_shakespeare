@@ -32,21 +32,16 @@ def pos_analysis(A, O, pos_dic, index_dic):
 if __name__ == '__main__':
 	transition_file = str('./pickles/' + sys.argv[1])
 	observation_file = str('./pickles/' + sys.argv[2])
-	# poem = str(sys.argv[3])
-	# index_dic = str(sys.argv[4])
-	# count_dic = str(sys.argv[5])
 	index_dic_file = str('./pickles/' + sys.argv[3])
 	count_dic_file = str('./pickles/' + sys.argv[4])
-	words_to_pos = cp.load(open(str('./pickles/' + sys.argv[5]), 'rb'))
+	words_to_pos_file = str('./pickles/' + sys.argv[5]), 'rb')
 
-	# transition = cp.load(open(transition_file, 'rb'))
-	# observation = cp.load(open(emission_file, 'rb'))
 	A = np.load(transition_file, 'r')
 	O = np.load(observation_file, 'r')
 	index_dic = cp.load(open(index_dic_file, 'rb'))
 	count_dic = cp.load(open(count_dic_file, 'rb'))
+	pos_dic = cp.load(open(words_to_pos_file, 'rb'))
 	
-	print(O.shape)
 	norm = np.empty(O.shape)
 	for i in range(O.shape[1]): 
 		norm[:,i] = O[:,i] / count_dic[index_dic[i]]
