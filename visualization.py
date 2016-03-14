@@ -30,11 +30,11 @@ def pos_analysis(O, pos_dic, pos_to_words, index_dic):
 			index = parts_of_speech.index(pos)
 			dic[i][index] += O[i][j]
 
-	print(dic)
 
 	for i in dic: 
 		row = i.tolist()
 		max_pos = row.index(max(row))
+
 		print(max_pos, parts_of_speech[max_pos])
 	return dic
 
@@ -51,7 +51,6 @@ def word_category(O, index_dic):
 
 		indices.append(row_words)
 
-	print(indices)
 	return indices
 
 def syllables(O, index_dic, syl_dic): 
@@ -64,6 +63,7 @@ def syllables(O, index_dic, syl_dic):
 				ave_syl[i] += (num_syl * O[i][j])
 				total_prob += O[i][j]
 		ave_syl[i] /= total_prob
+
 	print(ave_syl)
 	return ave_syl
 
@@ -84,6 +84,8 @@ def placement(word_list, O):
 			matrix[i][0] += O[i][j]
 		for k in last: 
 			matrix[i][1] += O[i][j]
+
+	print(matrix)
 
 	return matrix 
 
@@ -146,8 +148,6 @@ def num_pos(pos_to_words):
 			x_axis.append(key)
 			y_axis.append(len(pos_to_words[key]))
 
-	print(x_axis)
-	print(y_axis)
 	plt.figure()
 	plt.xlim([0, len(x_axis)])
 	plt.bar(range(len(y_axis)), y_axis, align='center')
@@ -221,17 +221,20 @@ if __name__ == '__main__':
 
 
 	# pos_prob = pos_analysis(norm, pos_dic, pos_to_words, index_dic)
+	
 	# top_words = word_category(norm, index_dic)
+	# cp.dump(top_words, open('./pickles/top_words.p', 'wb'))
 	# ave_syl = syllables(norm, index_dic, syl_dic)
-	# quatrain_prob = placement(quatrains, norm)
-	# volta_prob = placement(volta, norm)
-	# couplet_prob = placement(couplet, norm)
+	quatrain_prob = placement(quatrains, norm)
+	volta_prob = placement(volta, norm)
+	couplet_prob = placement(couplet, norm)
 	# num_syl(word_list, index_dic, syl_dic)
 	# num_unique_syl(syl_dic)
 	# num_words(word_list)
 	# num_pos(pos_to_words)
 	# num_rhymes(rhyme_dic)
-	num_count(count_dic)
+	# num_count(count_dic)
+	print(rhyme_dic['i'])
 
 
 
