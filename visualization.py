@@ -32,12 +32,30 @@ def pos_analysis(O, pos_dic, pos_to_words, index_dic):
 	print(dic)
 
 	for i in dic: 
-		# print(i)
-		# print (max(i))
 		row = i.tolist()
 		max_pos = row.index(max(row))
 		print(max_pos, parts_of_speech[max_pos])
 	return dic 
+
+
+def word_category(O, index_dic): 
+	indices = []
+	for i in O: 
+		row_words = []
+		row = i
+		values = row.argsort()[-10:][::-1]
+		
+		for j in values: 
+			row_words.append(index_dic[j])
+
+		indices.append(row_words)
+
+	print(indices)
+	return indices
+
+
+
+
 
 
 
@@ -63,7 +81,8 @@ if __name__ == '__main__':
 		norm[:,i] = O[:,i] / count_dic[index_dic[i]]
 
 
-	pos_prob = pos_analysis(norm, pos_dic, pos_to_words, index_dic)
+	# pos_prob = pos_analysis(norm, pos_dic, pos_to_words, index_dic)
+	top_words = word_category(norm, index_dic)
 
 
 
