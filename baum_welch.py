@@ -7,6 +7,7 @@ import random
 import pickle 
 import sys 
 import os 
+import csv 
 import numpy as np 
 
 
@@ -168,7 +169,8 @@ def xi(A, O, S, F, B):
 			for j in range(L): 
 				t_matrix[i][j] = F[i][t] * A[i][j] * B[j][t + 1] * O[j][t + 1]
 		# normalize the t_matrix so that its entries sum to 1
-		t_matrix = np.divide(t_matrix, np.sum(t_matrix))
+		if t_matrix.astype(int).all() != 0:
+			t_matrix = np.divide(t_matrix, np.sum(t_matrix))
 		E[t] = t_matrix 
 
 	return E 
@@ -333,13 +335,13 @@ def find_mean_std(obs):
 
 ####################################################################################################
 ## MAIN
-# 
-# main is run with 4 command line arguments:
-#     [OBS PICKLE FILE]    the name of the pickle file storing the list of observations 
-#     [NUM DISTINCT OBS]   the number of distinct observations possible for the list 
-#                          of observations, i.e. 3232 means valid indices are from 0 to 3231 
-#     [NUM HIDDEN STATES]  the number of hidden states to use for this HMM 
-#     [TOLERANCE]          the difference between the norms of A and O where we stop converging
+# command line arguments:
+#     [OBS PICKLE FILE]       the name of the pickle file storing the list of observations 
+#     [NUM DISTINCT OBS]      the number of distinct observations possible for the list 
+#                             of observations, i.e. 3232 means valid indices are from 0 to 3231 
+#     [NUM HIDDEN STATES]     the number of hidden states to use for this HMM 
+#     [TOLERANCE]             the difference between the norms of A and O where we stop converging
+#     [OUTPUT PICKLE ID NUM]  the number to identify this HMM 
 #  
 # example: python baum_welch.py ./pickles/sonnet_to_index.p 3232 10 0.01 
 #
@@ -357,8 +359,9 @@ def find_mean_std(obs):
 ####################################################################################################
 if __name__ == '__main__':
 
-	if len(sys.argv) != 5:
-		print("Usage:", sys.argv[0], "[OBS PICKLE FILE] [NUM DISTINCT OBS] [NUM HIDDEN STATES] [TOLERANCE]")
+	if len(sys.argv) != 6:
+		print("Usage:", sys.argv[0], """"[OBS PICKLE FILE] [NUM DISTINCT OBS] 
+			[NUM HIDDEN STATES] [TOLERANCE] [OUTPUT PICKLE ID NUM]""")
 		sys.exit(1)  
 
 	# retrive command line arguments 
@@ -366,35 +369,39 @@ if __name__ == '__main__':
 	MAX_OBS = int(sys.argv[2])         # the total number of distinct observations in our dataset 
 	NUM_STATES = int(sys.argv[3])      # the number of hidden states to be used for our model 
 	TOLERANCE  = float(sys.argv[4])    # our tolerance for convergence 
+	OUTPUT_ID = str(sys.argv[5])       # the id used for this HMM to output 
 
 	# unpickle the list of observations 
 	obs = pickle.load(open(PICKLE_FILE, 'rb'))
 	print("Number of samples in dataset is: ", len(obs))
+	# print(obs)
+	# sys.exit(0)
 
-	(mean, std) = find_mean_std(obs)
-	print(mean)
-	print(std) 
-	
 	# sanity check that no index in the dataset is >= MAX_OBS or < 0.
-	assert check_obs(MAX_OBS, obs) == True     
+	assert check_obs(MAX_OBS, obs) == True    
+
+	# output the mean and std_dev for this observation sequence with ID 
+	(mean, std) = find_mean_std(obs)
+	mean_std_file = open(os.getcwd() + '/pickles/mean_std_' + OUTPUT_ID + '.txt', 'w+')
+	mean_std_file.write("Mean: " + str(mean) + '\n' + "SD: " + str(std) + '\n')
+	mean_std_file.close()  
 	
 	# perform training on the list of observations obs 
 	(S, A, O) = baum_welch(NUM_STATES, MAX_OBS, obs, TOLERANCE) 
 
-	print("Before pickle... \n") 
 	print("FINAL TRANSITION MATRIX IS: \n", A)
 	print("FINAL OBSERVATION MATRIX IS: \n", O)
 
 	# pickle the results
 	try:
-		os.remove('pickles/transition.npy')
-		os.remove('pickles/observation.npy')
-		os.remove('pickles/start.npy')
+		os.remove('pickles/transition_' + OUTPUT_ID + '.npy')
+		os.remove('pickles/observation_' + OUTPUT_ID + '.npy')
+		os.remove('pickles/start_' + OUTPUT_ID + '.npy')
 	except OSError or IOError:
 		pass
-	transition_file = open(os.getcwd() + '/pickles/transition.npy', 'w+')
-	observation_file = open(os.getcwd() + '/pickles/observation.npy', 'w+')
-	start_file = open(os.getcwd() + '/pickles/start.npy', 'w+')
+	transition_file = open(os.getcwd() + '/pickles/transition_' + OUTPUT_ID + '.npy', 'w+')
+	observation_file = open(os.getcwd() + '/pickles/observation_' + OUTPUT_ID + '.npy', 'w+')
+	start_file = open(os.getcwd() + '/pickles/start_' + OUTPUT_ID + '.npy', 'w+')
 	np.save(transition_file, A)
 	np.save(observation_file, O)
 	np.save(start_file, S) 
@@ -402,18 +409,19 @@ if __name__ == '__main__':
 	observation_file.close() 
 	start_file.close() 
 
-	# unpickling 
-	print("After pickle... \n") 
-	retrived_transition = np.load(os.getcwd() + '/pickles/transition.npy', 'r') 
-	retrived_observation = np.load(os.getcwd() + '/pickles/observation.npy', 'r') 
-	retrived_start = np.load(os.getcwd() + '/pickles/start.npy', 'r') 
-	print("UNPICKLED TRANS: \n", retrived_transition)
-	print("UNPICKLED OBS: \n", retrived_observation)
-
-	# assert that the arrays before and after saving are equal entrywise 
+	# check that the pickled files are equivalent to the generated matrices 
+	retrived_transition = np.load(os.getcwd() + '/pickles/transition_' + OUTPUT_ID + '.npy', 'r') 
+	retrived_observation = np.load(os.getcwd() + '/pickles/observation_' + OUTPUT_ID + '.npy', 'r') 
+	retrived_start = np.load(os.getcwd() + '/pickles/start_' + OUTPUT_ID + '.npy', 'r') 
 	assert A.all() == retrived_transition.all()
 	assert O.all() == retrived_observation.all()
 	assert S.all() == retrived_start.all() 
+
+	# if you want to print a matrix to file to look at it 
+	# O_list = O.tolist()
+	# with open("observation.csv", "wb") as f:
+	# 	writer = csv.writer(f)
+	# 	writer.writerows(O_list)
 
 
 	
