@@ -9,13 +9,16 @@ The team members are:
 If you are participating in the competition, it is a violation of the honor code
 to view this code without permission from one of the team members above. 
 
+The final report is stored as a PDF as final_report.pdf 
+
 GUIDE TO CODE:
 
 	DIRECTORIES:
 		pickles
 			contains all the pickled numpy arrays, lists, and dictionaries used 
 			throughout all programs during poem generation 
-
+		images
+			self explanatory 
 
 	PYTHON:
 		parse.py 
