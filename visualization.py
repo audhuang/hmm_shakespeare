@@ -53,9 +53,43 @@ def word_category(O, index_dic):
 	print(indices)
 	return indices
 
+def syllables(O, index_dic, syl_dic): 
+	ave_syl = np.zeros([len(O)])
+	for i in range(O.shape[0]): 
+		total_prob = 0
+		for j in range(O.shape[1]): 
+			if O[i][j] != 0: 
+				num_syl = sum(syl_dic[index_dic[j]]) / len(syl_dic[index_dic[j]])
+				ave_syl[i] += (num_syl * O[i][j])
+				total_prob += O[i][j]
+		ave_syl[i] /= total_prob
+	print(ave_syl)
+	return ave_syl
 
 
 
+def placement(word_list, O): 
+	first = []
+	last = []
+	matrix = np.zeros([len(O), 2])	
+	
+	for line in word_list:
+		first.append(line[-1])
+		last.append(line[0]) 
+
+	for i in range(len(O)): 
+		for j in first: 
+			matrix[i][0] += O[i][j]
+		for k in last: 
+			matrix[i][1] += O[i][j]
+
+	return matrix 
+
+
+def statistics(word_list, syl_dic): 
+	for line in word_list: 
+		for word in line: 
+			
 
 
 
@@ -67,6 +101,10 @@ if __name__ == '__main__':
 	count_dic_file = str('./pickles/count_dic.p')
 	words_to_pos_file = str('./pickles/words_to_pos.p')
 	pos_to_words_file = str('./pickles/pos_to_words.p')
+	syl_dic_file = str('./pickles/syl_dic.p')
+	quatrains_file = str('/pickles/quatrains.p')
+	volta_file = str('/pickles/volta.p')
+	couplet_file = str('/pickles/couplet.p')
 
 	A = np.load(transition_file, 'r')
 	O = np.load(observation_file, 'r')
@@ -74,6 +112,10 @@ if __name__ == '__main__':
 	count_dic = cp.load(open(count_dic_file, 'rb'))
 	pos_dic = cp.load(open(words_to_pos_file, 'rb'))
 	pos_to_words = cp.load(open(pos_to_words_file, 'rb'))
+	syl_dic = cp.load(open(syl_dic_file, 'rb'))
+	quatrains = cp.load(open(quatrains_file, 'rb'))
+	volta = cp.load(open(volta_file, 'rb'))
+	couplet = cp.load(open(couplet_file, 'rb'))
 
 
 	norm = np.empty(O.shape)
@@ -82,7 +124,11 @@ if __name__ == '__main__':
 
 
 	# pos_prob = pos_analysis(norm, pos_dic, pos_to_words, index_dic)
-	top_words = word_category(norm, index_dic)
+	# top_words = word_category(norm, index_dic)
+	# ave_syl = syllables(norm, index_dic, syl_dic)
+	quatrain_prob = placement(quatrains, norm)
+	print(quatrain_prob)
+
 
 
 
