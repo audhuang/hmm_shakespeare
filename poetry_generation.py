@@ -73,8 +73,8 @@ def pick_start(S):
 
 def pick_rhyming_start(S, A, O, rhyme):
     
-    rhyme_start = np.zeroes(S.shape)
-    for i in range(O.shape[1]):
+    rhyme_start = np.zeros(S.shape)
+    for i in range(O.shape[0]):
         for j in range(rhyme_start.shape[0]):
             rhyme_start[j] += O[i][rhyme]*A[j][i]
     
@@ -84,7 +84,11 @@ def pick_next(A, current):
     
     pick = random.random()
     for i in range(A.shape[0]):
-        pick = pick - A[i][current]
+        try:
+            pick = pick - A[i][current]
+        except IndexError:
+            print(type(i))
+            print(type(current))
         if pick <= 0:
             return i
     
@@ -105,7 +109,7 @@ def convert_to_observed(states, O):
     
     return observed
 
-def gen_line(A, O, start, length):
+def gen_line(A, O, start, length, offset):
     
     syllables_right = False
     
@@ -115,7 +119,7 @@ def gen_line(A, O, start, length):
         current = start
         hidden_states.append(current)
         
-        for i in range(length - 1):
+        for i in range(int(length - 1)):
             current = pick_next(A, current)
             hidden_states.append(current)
         
@@ -127,28 +131,47 @@ def gen_line(A, O, start, length):
         # syllables_right = True
         syllables = check_syllables(current_line)
         
-        if syllables == 10:
+        if syllables == (10 - offset):
             syllables_right = True
             
-    return current_line
+    return current_line[::-1]  
 
 def gen_couplets(A, O, S, avg_words, std):
     length = int(np.random.normal(avg_words, std))
     print (length)
     start = pick_start(S)
-    line1 = gen_line(A, O, start, length)
+
+    rhyme1 = random.choice(rhyming_dict.keys()) 
+    rhyme2 = rhyming_dict[rhyme1]
+
+    line1 = gen_line(A, O, start, length - 1, syllables_dict[rhyme1]) + [rhyme1]
+
+    # length = int(np.random.normal(avg_words, std))
+    # print (length)
+    # start = pick_start(S)
+    # line2 = gen_line(A, O, start, length)
     
-    length = int(np.random.normal(avg_words, std))
-    print (length)
-    start = pick_start(S)
-    line2 = gen_line(A, O, start, length)
-    
-    
-    #length = np.random.normal(avg_words, std) - 1
-    #rhyming = random.choice(rhyming_dict[line1[-1]])
-    #S_rhyme = pick_rhyming_start(line1[-1])
-    #start = pick_rhyming_start(S_rhyme)
-    #line2 = gen_line(A, O, start, length) + rhyming
+    # length = np.random.normal(avg_words, std) - 1
+    # while True:
+
+    #     print("in while")
+    #     try:
+    #         rhyming = random.choice(rhyming_dict[line1[-1]])
+    #     except KeyError: 
+    #         rhyming = random.choice(rhyming_dict[random.choice(rhyming_dict.keys())])
+    #     if rhyming in words_to_state_dict.keys():
+    #         break
+
+   
+
+    # S_rhyme = pick_rhyming_start(line1[-1])
+    # if rhyming not in words_to_state_dict.keys(): 
+    # start = pick_rhyming_start(S, A, O, words_to_state_dict[rhyming])
+    line2 = gen_line(A, O, pick_start(S), length, syllables_dict[rhyme2]) + [rhyme2]
+
+    print(rhyme1, rhyme2)
+    print (line1[-1], line2[-1])
+    print (line1, line2)
     
     return (line1, line2)
 
@@ -168,35 +191,34 @@ def poem_gen(S, A, O, avg_words, std):
     
     
 if __name__ == '__main__':
-    L = 10
-    M = 10
 
-    S = np.random.uniform(size=L)    # initialize a start state distribution S for the HMM 
-    S = np.divide(S, np.sum(S))      # normalize the vector to 1 
 
+    # L = 30
+    # M = 10
+
+    # S = np.random.uniform(size=L)    # initialize a start state distribution S for the HMM 
+    # S = np.divide(S, np.sum(S))      # normalize the vector to 1 
 
     # the rows of A are the target states and the columns of A are the start states. 
         # given a start state, one of the target states must be choosen so each column is normalized
-    A = np.random.rand(L, L) 
-    for i in range(L): 
-        A[:,i] = np.divide(A[:,i], np.sum(A[:,i]))    
+    # A = np.random.rand(L, L) 
+    # for i in range(L): 
+    #     A[:,i] = np.divide(A[:,i], np.sum(A[:,i]))    
 
-        # given some hidden state, there must be some observation, so every row of this matrix should
-        # be normalized
-    O = np.random.rand(L, M) 
-    for i in range(L):
-        O[i,:] = np.divide(O[i,:], np.sum(O[i,:])) 
+    #     # given some hidden state, there must be some observation, so every row of this matrix should
+    #     # be normalized
+    # O = np.random.rand(L, M) 
+    # for i in range(L):
+    #     O[i,:] = np.divide(O[i,:], np.sum(O[i,:])) 
 
     average_length = 8.15977443609
     std = 1.1474220639
+    
+    A = np.load(os.getcwd() + '/pickles/full_50_states_001_toler/transition_full.npy', 'r') 
+    O = np.load(os.getcwd() + '/pickles/full_50_states_001_toler/observation_full.npy', 'r') 
+    S = np.load(os.getcwd() + '/pickles/full_50_states_001_toler/start_full.npy', 'r') 
 
-    rhyming_dict = {}
-    syllables_dict = {}
-    states_to_words_dict = {}
-
-    A = np.load(os.getcwd() + '/pickles/full_001/transition_full.npy', 'r') 
-    O = np.load(os.getcwd() + '/pickles/full_001/observation_full.npy', 'r') 
-    S = np.load(os.getcwd() + '/pickles/full_001/start_full.npy', 'r') 
+    A = np.transpose(A) 
 
     # A = pickle.load( open( "transition.npy", "rb" ) )
     # O = pickle.load( open( "observation.npy", "rb" ) )
@@ -207,10 +229,15 @@ if __name__ == '__main__':
     syllables_dict = convert_syllables_dict(nonhomogenous_syllables_dict)
     states_to_words_dict = pickle.load( open( "./pickles/index_to_word.p", "rb" ) )
     words_to_state_dict = {v: k for k, v in states_to_words_dict.iteritems()}
+    rhyming_dict = pickle.load( open( "./pickles/rhyme_dic.p", "rb" ) )
     # print(states_to_words_dict)
     # check_syllables_dict(syllables_dict)
-    print(poem_gen(S, A, O, average_length, std))
+    
 
+    poem = (poem_gen(S, A, O, average_length, std))
+    for line in poem:
+        print (line)
+    # print(rhyming_dict)
 # In[ ]:
 
 
