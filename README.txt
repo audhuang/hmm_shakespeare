@@ -10,6 +10,7 @@ If you are participating in the competition, it is a violation of the honor code
 to view this code without permission from one of the team members above. 
 
 The final report is stored as a PDF as final_report.pdf 
+Late hours used: 13 out of 17 remaining hours
 
 GUIDE TO CODE:
 
