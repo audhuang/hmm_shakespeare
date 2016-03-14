@@ -194,10 +194,9 @@ if __name__ == '__main__':
     syllables_dict = {}
     states_to_words_dict = {}
 
-
-    A = np.load(os.getcwd() + '/pickles/transition.npy', 'r') 
-    O = np.load(os.getcwd() + '/pickles/observation.npy', 'r') 
-    S = np.load(os.getcwd() + '/pickles/start.npy', 'r') 
+    A = np.load(os.getcwd() + '/pickles/full_001/transition_full.npy', 'r') 
+    O = np.load(os.getcwd() + '/pickles/full_001/observation_full.npy', 'r') 
+    S = np.load(os.getcwd() + '/pickles/full_001/start_full.npy', 'r') 
 
     # A = pickle.load( open( "transition.npy", "rb" ) )
     # O = pickle.load( open( "observation.npy", "rb" ) )
