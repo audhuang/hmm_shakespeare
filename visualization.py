@@ -104,6 +104,20 @@ def num_syl(word_list, index_dic, syl_dic):
 	ax.set_ylabel('number of words')
 	plt.show()
 
+def num_unique_syl(syl_dic, count_dic): 
+	x_axis = np.arange(10)
+	result = np.zeros(10)
+	for key in syl_dic: 
+		result[syl_dic[key]] += 1 
+
+	plt.figure() 
+	plt.bar(x_axis, result)
+
+	plt.xlabel('# syllables')
+	plt.ylabel('number of unique words')
+	plt.show()
+
+
 def num_words(word_list): 
 	x_axis = np.arange(11)
 	result = np.zeros(11)
@@ -158,8 +172,17 @@ def num_rhymes(rhyme_dic):
 	plt.ylabel('number of words')
 	plt.show()
 
+def num_count(count_dic): 
+	result = np.zeros(490)
+	for key in count_dic: 
+		result[count_dic[key]] += 1
 
-
+	plt.figure()
+	plt.xlim([0, len(result)])
+	plt.bar(range(len(result)), np.log(result), align='center')
+	plt.xlabel('# of repetitions')
+	plt.ylabel('log number of words')
+	plt.show()
 
 
 if __name__ == '__main__':
@@ -204,9 +227,11 @@ if __name__ == '__main__':
 	# volta_prob = placement(volta, norm)
 	# couplet_prob = placement(couplet, norm)
 	# num_syl(word_list, index_dic, syl_dic)
+	# num_unique_syl(syl_dic)
 	# num_words(word_list)
 	# num_pos(pos_to_words)
-	num_rhymes(rhyme_dic)
+	# num_rhymes(rhyme_dic)
+	num_count(count_dic)
 
 
 
