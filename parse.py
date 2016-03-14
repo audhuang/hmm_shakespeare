@@ -40,6 +40,7 @@ def parse(word_dic, index_dic):
 
 	counter = collections.Counter(words)
 	cp.dump(counter, open('./pickles/count_dic.p', 'wb'))
+	print(len(count_dic))
 
 	print("number unique words: ", len(unique))
 
@@ -164,6 +165,7 @@ def pos(line_list):
 	# save the tag dictionary 
 	cp.dump(tag_dic, open('./pickles/pos_to_words.p', 'wb'))
 	cp.dump(pos_dic, open('./pickles/words_to_pos.p', 'wb'))
+
 	return tag_dic, tag_list, pos_dic
 
 
