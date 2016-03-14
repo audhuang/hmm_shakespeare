@@ -15,6 +15,12 @@ from nltk.corpus import cmudict
 
 d = cmudict.dict() # dicionary of syllables from cmudict
 
+def check_unique(unique): 
+	out = open('unique.txt', 'w')
+
+	for i in unique: 
+		out.write(i + '\n')
+	out.close()
 
 # parses the text file 'shakespeare.txt' and adds each unique word to a dictionary,
 # WORD_DIC, with a unique index 
@@ -30,6 +36,7 @@ def parse(word_dic, index_dic):
 
 	words = list(text.split()) # split file into a list of words by spaces
 	unique = list(set(words)) # get unique list of words
+	unique.remove("'")
 
 	counter = collections.Counter(words)
 	cp.dump(counter, open('./pickles/count_dic.p', 'wb'))
@@ -64,6 +71,8 @@ def check_pos(pos_list):
 		for j in i: 
 			out.write(j + ' ')
 		out.write('\n')
+
+
 		 
 
 def get_list(index_dic): 
@@ -77,6 +86,8 @@ def get_list(index_dic):
 		line = re.sub('[^a-z\ \'\-]+', ' ', line) # replace punctuation with spaces
 		words = list(line.split(' '))
 		words = filter(None, words)
+		if "'" in words: 
+			words.remove("'")
 		# print(words, len(words))
 
 		if len(words) > 1: 
@@ -91,6 +102,7 @@ def get_list(index_dic):
 	text = re.sub("(?=.*\w)^(\w|')+", '', text)
 
 	words = list(text.split()) # split file into a list of words by spaces
+	words = filter(lambda a: a != "'", words)
 
 	# generate index for each line 
 	ind = 0
@@ -311,7 +323,7 @@ def bad_syllables(bad_dic, not_in_dic):
 
 
 		# the number of syllables is equal to the number of vowels
-		bad_dic[i] = num_syl
+		bad_dic[i] = [num_syl]
 
 	return bad_dic
 
@@ -329,9 +341,6 @@ def syllables(word_dic, syl_dic, bad_dic):
 		else: 
 			not_in_dic.append(key)
 
-	# remove a string that's just a comma and not a word
-	not_in_dic.remove("'")
-	# print(not_in_dic)
 	
 	# call function to calculate number of syllables for each word not in cmudict
 	bad_dic = bad_syllables(bad_dic, not_in_dic)
